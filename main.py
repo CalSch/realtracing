@@ -1,6 +1,7 @@
 import moderngl
 import numpy as np
 import re
+import structs
 
 # --- GLSL struct (std430 layout rules) ---
 # struct Particle {
@@ -15,6 +16,7 @@ COMPUTE_SHADER = open("theshader.glsl",'r').read()
 
 COMPUTE_SHADER = re.sub(r"#include \"(.*)\"", lambda m: open(m.group(1),'r').read(), COMPUTE_SHADER)
 
+# print(COMPUTE_SHADER)
 
 # --- Matching numpy dtype (must mirror std430 padding exactly) ---
 particle_dtype = np.dtype([
@@ -31,7 +33,7 @@ ctx = moderngl.create_standalone_context(require=430)
 compute = ctx.compute_shader(COMPUTE_SHADER)
 
 # allocate buffer sized for N structs, zero-initialized
-init_data = np.zeros(N, dtype=particle_dtype)
+init_data = np.zeros(N, dtype=structs.dtype_result)
 buffer = ctx.buffer(init_data.tobytes())
 buffer.bind_to_storage_buffer(0)
 
@@ -39,7 +41,7 @@ buffer.bind_to_storage_buffer(0)
 compute.run(group_x=N // 64)
 
 # read back and reinterpret as the same struct array
-result = np.frombuffer(buffer.read(), dtype=particle_dtype)
+result = np.frombuffer(buffer.read(), dtype=structs.dtype_result)
 
 print(result[:5])
-print("dtype itemsize:", particle_dtype.itemsize)
+print("dtype itemsize:", structs.dtype_result.itemsize)

@@ -9,21 +9,16 @@ struct Particle {
     float mass;
     vec3 vel;
     float pad;
-    binky g;
+    // binky g;
 };
 
-layout(std430, binding = 0) buffer ParticleBuffer {
-    Particle particles[];
+layout(std430, binding = 0) buffer ResultBuffer {
+    result results[];
 };
 
 void main() {
     uint i = gl_GlobalInvocationID.x;
-    if (i >= particles.length()) return;
+    if (i >= results.length()) return;
 
-    particles[i].g.x;
-
-    particles[i].pos = vec3(float(i), float(i) * 2.0, 0.0);
-    particles[i].mass = float(i) + 1.0;
-    particles[i].vel = vec3(1.0, 0.0, 0.0);
-    particles[i].pad = 0.0;
+    results[i].bounce_count = 4;
 }
