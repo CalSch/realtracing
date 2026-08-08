@@ -37,7 +37,7 @@ def dict_to_struct(d: dict[str, Any] | list | tuple, dtype: np.dtype) -> np.void
 
 GROUP_SIZE_X = 1024
 
-RESOLUTION = [128, 96]
+RESOLUTION = [128*8, 96*8]
 # RESOLUTION = [256, 192]
 
 COMPUTE_SHADER = open("theshader.glsl",'r').read()
@@ -117,7 +117,11 @@ def main():
                 print(f"\x1b[48;5;{v+16}m  ", end="")
             print()
 
+    print(f"{len(result)=}")
+    print(f"{result[0].size=}")
+    print(f"{result[0].size*len(result)=}")
+    print('saving...')
     with open('results.json', 'w') as f:
-        json.dump([struct_to_dict(r) for r in result], f, indent=2)
+        json.dump([struct_to_dict(r) for r in result], f)
 
 main()

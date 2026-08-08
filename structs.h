@@ -1,6 +1,6 @@
 #include "glsl_include.h"
 
-#define MAX_ITERS 256
+#define MAX_ITERS 80
 
 struct Result {
     int idx;
