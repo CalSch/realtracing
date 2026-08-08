@@ -1,47 +1,123 @@
 import moderngl
 import numpy as np
 import re
+from pprint import pprint, pp
 import structs
+from typing import Any
+import time
+import json
 
-# --- GLSL struct (std430 layout rules) ---
-# struct Particle {
-#     vec3 pos;   // occupies 16 bytes (vec3 aligns to 16, not 12)
-#     float mass; // fills the 4 bytes left in that 16-byte slot
-#     vec3 vel;   // another 16 bytes
-#     float pad;  // explicit padding to make the struct size a multiple of 16
-# };
-# Total size: 32 bytes per struct
+
+# clud's code
+
+def dict_to_struct(d: dict[str, Any] | list | tuple, dtype: np.dtype) -> np.void:
+    arr = np.zeros(1, dtype=dtype)[0]
+    for name in dtype.names:
+        if isinstance(d, dict):
+            if name not in d:
+                continue  # leave field at its zero default
+            val = d[name]
+        else:
+            val = d[dtype.names.index(name)]
+
+        field_dtype = dtype[name]
+        if field_dtype.names is not None:
+            if field_dtype.shape:  # array of structs
+                for i, item in enumerate(val):
+                    arr[name][i] = dict_to_struct(item, field_dtype.base)
+            else:
+                # nested struct: accept a dict, or a list/tuple in field order
+                arr[name] = dict_to_struct(val, field_dtype)
+        else:
+            arr[name] = val
+    return arr
+
+
+
+
+GROUP_SIZE_X = 1024
+
+RESOLUTION = [128, 96]
+# RESOLUTION = [256, 192]
 
 COMPUTE_SHADER = open("theshader.glsl",'r').read()
-
 COMPUTE_SHADER = re.sub(r"#include \"(.*)\"", lambda m: open(m.group(1),'r').read(), COMPUTE_SHADER)
+COMPUTE_SHADER += f"\nlayout(local_size_x = {GROUP_SIZE_X}) in;\n"
 
-# print(COMPUTE_SHADER)
-
-# --- Matching numpy dtype (must mirror std430 padding exactly) ---
-particle_dtype = np.dtype([
-    ("pos", np.float32, 3),
-    ("mass", np.float32),
-    ("vel", np.float32, 3),
-    ("pad", np.float32),
-])  # itemsize == 32, matches GLSL struct size
-
-N = 256
+with open(".output.glsl",'w') as f:
+    f.write(COMPUTE_SHADER)
 
 ctx = moderngl.create_standalone_context(require=430)
 
 compute = ctx.compute_shader(COMPUTE_SHADER)
 
-# allocate buffer sized for N structs, zero-initialized
-init_data = np.zeros(N, dtype=structs.dtype_result)
-buffer = ctx.buffer(init_data.tobytes())
-buffer.bind_to_storage_buffer(0)
+def ceiling_divide(x: int, y: int) -> int:
+    return (x + y - 1) // y
 
-# dispatch: local_size_x=64, so N/64 work groups
-compute.run(group_x=N // 64)
+def run_batch(start_idx: int, batch_size: int) -> np.ndarray:
+    INPUT_BUF_INIT = dict_to_struct({
+        "resolution": RESOLUTION,
+        "win_min": [-2, -1],
+        "win_max": [0.5, 1],
+    }, structs.dtype_Input)
+    input_buf = ctx.buffer(INPUT_BUF_INIT.tobytes())
+    input_buf.bind_to_storage_buffer(1)
 
-# read back and reinterpret as the same struct array
-result = np.frombuffer(buffer.read(), dtype=structs.dtype_result)
+    # allocate buffer sized for N structs, zero-initialized
+    RESULT_BUF_INIT = np.zeros(batch_size, dtype=structs.dtype_Result)
+    result_buf = ctx.buffer(RESULT_BUF_INIT.tobytes())
+    result_buf.bind_to_storage_buffer(0)
 
-print(result[:5])
-print("dtype itemsize:", structs.dtype_result.itemsize)
+    compute["start_idx"] = start_idx
+
+    group_count_x = ceiling_divide(batch_size, GROUP_SIZE_X)
+    print(f"{group_count_x=}")
+    compute.run(group_x=group_count_x)
+
+    # read back and reinterpret as the same struct array
+    result = np.frombuffer(result_buf.read(), dtype=structs.dtype_Result)
+
+    return result
+
+
+def main():
+
+    # N = 100
+    N = RESOLUTION[0] * RESOLUTION[1]
+
+    start = time.perf_counter()
+    result = run_batch(0,N)
+    end = time.perf_counter()
+    print(f"{end-start=}")
+    # result = run_batch(1,N)
+
+    # print(result[:5])
+    def struct_to_dict(x):
+        if x.dtype.names is None:
+            return x.tolist() if x.shape else x.item()
+        return {name: struct_to_dict(x[name]) for name in x.dtype.names if not name.startswith("_")}
+
+
+    if False:
+        print(result[0])
+        print(result[1])
+        pprint(struct_to_dict(result[0]))
+        pprint(struct_to_dict(result[1]))
+        pprint(struct_to_dict(result[2]))
+        print("------")
+        pprint(struct_to_dict(result[N-3]))
+        pprint(struct_to_dict(result[N-2]))
+        pprint(struct_to_dict(result[N-1]))
+    print("dtype itemsize:", structs.dtype_Result.itemsize)
+
+    if True:
+        for y in range(RESOLUTION[1]):
+            for x in range(RESOLUTION[0]):
+                v = struct_to_dict(result[x+y*RESOLUTION[0]])["time_to_escape"]
+                print(f"\x1b[48;5;{v+16}m  ", end="")
+            print()
+
+    with open('results.json', 'w') as f:
+        json.dump([struct_to_dict(r) for r in result], f, indent=2)
+
+main()

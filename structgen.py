@@ -1,16 +1,19 @@
 from CStructParser.CStructParser import CStructParser, StructField
 import pprint
 import sys
+import re
+
+INPUT_TEXT = sys.stdin.read()
 
 # Initialize parser with structure definition
-parser = CStructParser(sys.stdin.read(), endian='little', debug=True)
+parser = CStructParser(INPUT_TEXT, endian='little', debug=True)
 
 fields: dict[str, dict[str, StructField]] = parser.struct_fields
 
 # --- std430 base alignment/size table (bytes) ---
 # type_name -> (size, alignment)
 KNOWN_TYPES = {
-    "float": (4, 4), "int": (4, 4), "uint": (4, 4), "bool": (4, 4),
+    "float": (4, 4), "int": (4, 4), "uint": (4, 4), "unsigned int": (4, 4), "bool": (4, 4),
     "double": (8, 8),
     "vec2": (8, 8), "ivec2": (8, 8), "uvec2": (8, 8),
     "vec3": (12, 16), "ivec3": (12, 16), "uvec3": (12, 16),
@@ -22,6 +25,7 @@ PY_TYPE_LUT = {
     "float": "np.float32",
     "int": "np.int32",
     "uint": "np.uint32",
+    "unsigned int": "np.uint32",
     "bool": "np.int32",
     "double": "np.float64",
 }
@@ -30,12 +34,16 @@ PY_TYPE_LUT = {
 def align_up(n, a):
     return ((n + a - 1) // a) * a
 
+def get_dtype_name(struct_name: str):
+    return f"dtype_{struct_name.replace(' ','_')}"
 
 py = "import numpy as np\n\n"
 glsl = ""
 
 for struct_name in fields:
     struct = fields[struct_name]
+
+    print(f"==================== working on {struct_name}")
 
     # vec2/vec3/vec4 etc are GLSL builtins -- skip emitting a glsl struct,
     # and don't recompute their alignment (it's hardcoded above, since it
@@ -45,7 +53,7 @@ for struct_name in fields:
 
     if not glsl_skip:
         glsl += f"struct {struct_name} {{\n"
-    py += f"dtype_{struct_name} = np.dtype([\n"
+    py += f"{get_dtype_name(struct_name)} = np.dtype([\n"
 
     offset = 0
     max_align = 4
@@ -81,7 +89,7 @@ for struct_name in fields:
             max_align = max(max_align, field_align)
 
         glsl_array = f"[{val.array_size}]" if val.array_size is not None else ""
-        py_type = PY_TYPE_LUT.get(val.type_name, f"dtype_{val.type_name}")
+        py_type = PY_TYPE_LUT.get(val.type_name, get_dtype_name(val.type_name))
         py_array = f", {val.array_size}" if val.array_size is not None else ""
 
         if not glsl_skip:
@@ -91,15 +99,37 @@ for struct_name in fields:
         offset += field_size
 
     if not glsl_skip:
-        struct_align = align_up(max_align, 16)
-        final_size = align_up(offset, 16)
+        # struct_align = align_up(max_align, 16)
+        struct_align = max_align
+        final_size = align_up(offset, struct_align)
         trailing_gap = final_size - offset
         if trailing_gap > 0:
+            print(f"on the end...")
+            print(f" {offset=}")
+            print(f" {final_size=}")
+            print(f" adding gap of {trailing_gap}")
             py += f"\t('_pad{pad_idx}', np.uint8, {trailing_gap}),\n"
         KNOWN_TYPES[struct_name] = (final_size, struct_align)
         glsl += "};\n"
 
     py += "])\n"
+
+
+# -------------------------------------------------------------------------------------------------
+# process #define's
+
+with open("structs.h",'r') as f:
+    for line in f:
+        m = re.match(r"^#define\s+(?P<name>\w+)\s+(?P<value>.*)\s+$",line)
+        if m:
+            print(m.groupdict())
+            glsl += line
+            py += f"{m.group('name')} = {m.group('value')}"
+
+
+# -------------------------------------------------------------------------------------------------
+
+
 
 with open("structs.glsl", 'w') as f:
     f.write(glsl)

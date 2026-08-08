@@ -1,22 +1,16 @@
 #include "glsl_include.h"
 
-#define MAX_BOUNCES 4
+#define MAX_ITERS 256
 
-struct bounce {
-    vec3 hit_point;
-    float pad1;
-    vec3 incoming;
-    float pad2;
-    vec3 normal;
-    float pad3;
+struct Result {
+    int idx;
+    int time_to_escape;
+    vec2 c;
+    vec2 iters[MAX_ITERS];
 };
 
-struct result {
-    int bounce_count;
-    int pad;
-    int pad3;
-    int pad4;
-    vec3 init;
-    float pad2;
-    bounce bounces[MAX_BOUNCES];
+struct Input {
+    ivec2 resolution;
+    vec2 win_min;
+    vec2 win_max;
 };
