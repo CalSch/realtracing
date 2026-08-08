@@ -1,12 +1,12 @@
 #include "glsl_include.h"
 
-#define MAX_ITERS 80
+#define MAX_ITERS 256
 
 struct Result {
-    int idx;
+    // int idx;
     int time_to_escape;
-    vec2 c;
-    vec2 iters[MAX_ITERS];
+    // vec2 c;
+    // vec2 iters[MAX_ITERS];
 };
 
 struct Input {

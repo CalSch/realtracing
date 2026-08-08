@@ -2,14 +2,17 @@
 import pyray as rl
 import json
 import math
+import numpy as np
+import structs
 
-with open("results.json", 'r') as f:
-    data = json.load(f)
+with open("results.bin", 'rb') as f:
+    # data = json.load(f)
+    data = np.frombuffer(f.read(), dtype=structs.dtype_Result)
 
 SW=1270
 SH=int(SW*3/4)
-DW=128*8
-DH=96*8
+DW=4096*8
+DH=4096*8
 
 rl.set_config_flags(rl.ConfigFlags.FLAG_WINDOW_HIGHDPI)
 rl.init_window(SW,SH,"goo")
@@ -24,8 +27,30 @@ def complex2win(x,y):
         int(rl.remap(y, -1, 1, 0, SH)),
     )
 
+color_palette = [rl.color_from_hsv(rl.remap(v, 0, structs.MAX_ITERS, 0, 360), 1, 1) for v in range(structs.MAX_ITERS+1)]
+
+def create_full_img():
+    img = rl.gen_image_color(DW,DH,rl.MAGENTA)
+    print("creating FULL image")
+    data=[]
+    for y in range(DH):
+        for x in range(DW):
+            i = x + y*DW
+            v = data[i]['time_to_escape']
+            # print(v)
+            c = color_palette[v]
+            if v == structs.MAX_ITERS:
+                c = rl.BLACK
+            # rl.image_draw_pixel(img,x,y,c)
+            data.append(c)
+
+    img = rl.
+    print("done")
+    rl.export_image(img,"out.png")
+
 def create_img():
     img = rl.gen_image_color(SW,SH,rl.MAGENTA)
+    print("creating image")
     for y in range(DH):
         for x in range(DW):
             i = x + y*DW
@@ -36,8 +61,10 @@ def create_img():
             if v == 80:
                 c = rl.BLACK
             rl.image_draw_rectangle(img,sx,sy,w,h,c)
+    print("done")
     return img
 
+create_full_img()
 
 IMG = create_img()
 BACKGROUND = rl.load_texture_from_image(IMG)
@@ -55,7 +82,7 @@ while not rl.window_should_close():
 
     if i>0 and i<=len(data):
         oldx, oldy = 0, 0
-        for j in range(len(data[i]["iters"]["x"])):
+        for j in range(len(data[0]["iters"]["x"])):
             first = j==0
             # print(j)
             x = data[i]['iters']['x'][j]
