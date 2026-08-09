@@ -3,3 +3,5 @@ structs.glsl
 structs.py
 __pycache__/
 .venv/
+.output.glsl
+results.bin
