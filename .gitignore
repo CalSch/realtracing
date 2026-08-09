@@ -4,3 +4,5 @@ structs.py
 __pycache__/
 .venv/
 gridview
+.output.glsl
+results.bin
