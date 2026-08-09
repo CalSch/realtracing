@@ -23,10 +23,11 @@ vec2 do_iter(vec2 z, vec2 c) {
 }
 
 void main() {
-    uint idx = gl_GlobalInvocationID.x + start_idx;
+    uint idx = gl_GlobalInvocationID.x;
     if (idx >= results.length()) {
         return;
     }
+    idx += start_idx;
 
     ivec2 coord = ivec2(
         idx % input_data.resolution.x,
@@ -35,23 +36,27 @@ void main() {
     vec2 uv = vec2(coord) / vec2(input_data.resolution);
 
     Result r;
-    r.idx = int(idx);
+    // r.idx = int(idx);
 
-    r.c.x = mix(input_data.win_min.x, input_data.win_max.x, uv.x);
-    r.c.y = mix(input_data.win_min.y, input_data.win_max.y, uv.y);
+    // r.c.x = mix(input_data.win_min.x, input_data.win_max.x, uv.x);
+    // r.c.y = mix(input_data.win_min.y, input_data.win_max.y, uv.y);
 
+    vec2 c = vec2(
+        mix(input_data.win_min.x, input_data.win_max.x, uv.x),
+        mix(input_data.win_min.y, input_data.win_max.y, uv.y)
+    );
     vec2 z = vec2(0,0);
 
     for (int i=0;i<MAX_ITERS;i++) {
-        z = do_iter(z, r.c);
-        r.iters[i] = z;
+        z = do_iter(z, c);
+        // r.iters[i] = z;
         if (length(z) > 2.0) {
             r.time_to_escape = i;
             break;
         }
     }
 
-    results[idx] = r;
+    results[idx-start_idx] = r;
     // results[0].idx = int(idx);
 
 

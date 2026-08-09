@@ -112,7 +112,7 @@ def main():
     N = RESOLUTION[0] * RESOLUTION[1]
     # CHUNKS = 8
     # CHUNK_SIZE=N//CHUNKS
-    CHUNK_SIZE = 2**16
+    CHUNK_SIZE = 2**24
     CHUNKS = ceiling_divide(N, CHUNK_SIZE)
 
     print(f"{CHUNKS=}")
@@ -122,12 +122,16 @@ def main():
 
     start = time.perf_counter()
     chunk_results = []
+
+    out_file = open('results.bin','wb')
+    
     for i in range(CHUNKS):
-        print(f"chunk {i}")
+        print(f"chunk {i}/{CHUNKS} = {i/CHUNKS*100:.4}%")
         new_data = run_batch(i*CHUNK_SIZE, CHUNK_SIZE)
         # new_data.dump(f"chunk{i:04}.bin")
         print(f"chunk {i} done")
-        chunk_results.append(new_data)
+        out_file.write(new_data.tobytes())
+        # chunk_results.append(new_data)
     results = np.concatenate(chunk_results)
     del chunk_results
 
@@ -165,8 +169,8 @@ def main():
     print(f"{results[0].nbytes=}")
     print(f"{results.nbytes=}")
     print('saving...')
-    with open('results.bin','wb') as f:
-        f.write(bytes(results))
+    # with open('results.bin','wb') as f:
+        # f.write(bytes(results))
     # print("jason!")
     # with open('results.json', 'w') as f:
     #     json.dump([struct_to_dict(r) for r in results], f)
