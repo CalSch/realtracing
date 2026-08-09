@@ -41,10 +41,9 @@ def create_full_img():
             c = color_palette[v]
             if v == structs.MAX_ITERS:
                 c = rl.BLACK
-            # rl.image_draw_pixel(img,x,y,c)
+            rl.image_draw_pixel(img,x,y,c)
             data.append(c)
 
-    img = rl.
     print("done")
     rl.export_image(img,"out.png")
 
