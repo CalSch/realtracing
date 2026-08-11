@@ -2,15 +2,23 @@
 
 #define MAX_ITERS 256
 
+struct Camera {
+    vec3 origin;
+    vec3 front;
+    vec3 right;
+    float fov;
+};
+
+struct Ray {
+    vec3 origin;
+    vec3 dir;
+};
+
 struct Result {
-    // int idx;
-    int time_to_escape;
-    // vec2 c;
-    // vec2 iters[MAX_ITERS];
+    int id;
+    Ray ray;
 };
 
 struct Input {
-    ivec2 resolution;
-    vec2 win_min;
-    vec2 win_max;
+    Camera cam;
 };

@@ -39,11 +39,9 @@ def dict_to_struct(d: dict[str, Any] | list | tuple, dtype: np.dtype) -> np.void
 
 GROUP_SIZE_X = 1024
 
-RESOLUTION = [4096*8,4096*8]
-# RESOLUTION = [128*8, 96*8]
 
-COMPUTE_SHADER = open("theshader.glsl",'r').read()
-COMPUTE_SHADER = re.sub(r"#include \"(.*)\"", lambda m: open(m.group(1),'r').read(), COMPUTE_SHADER)
+COMPUTE_SHADER = open("glsl/theshader.glsl",'r').read()
+COMPUTE_SHADER = re.sub(r"#include \"(.*)\"", lambda m: open("glsl/"+m.group(1),'r').read(), COMPUTE_SHADER)
 COMPUTE_SHADER += f"\nlayout(local_size_x = {GROUP_SIZE_X}) in;\n"
 
 with open(".output.glsl",'w') as f:
@@ -58,11 +56,8 @@ def ceiling_divide(x: int, y: int) -> int:
 
 
 
-print(" making input buf")
+print("  making input buf")
 INPUT_BUF_INIT = dict_to_struct({
-    "resolution": RESOLUTION,
-    "win_min": [-2, -1],
-    "win_max": [0.5, 1],
 }, structs.dtype_Input)
 input_buf = ctx.buffer(INPUT_BUF_INIT.tobytes())
 input_buf.bind_to_storage_buffer(1)
@@ -72,9 +67,9 @@ result_buf: moderngl.Buffer = ctx.buffer(b"67")
 
 def remake_result_buf(size):
     global result_buf
-    print(" making result buf")
+    print("  making result buf")
     RESULT_BUF_INIT = np.zeros(size, dtype=structs.dtype_Result)
-    print(f"  {RESULT_BUF_INIT.nbytes=}")
+    print(f"    {RESULT_BUF_INIT.nbytes=}")
     result_buf.release()
     result_buf = ctx.buffer(RESULT_BUF_INIT.tobytes())
     result_buf.bind_to_storage_buffer(0)
@@ -84,20 +79,23 @@ def remake_result_buf(size):
 def run_batch(start_idx: int, batch_size: int) -> np.ndarray:
 
     if result_buf.size != batch_size*structs.dtype_Result.itemsize:
-        print(f" i need to remake the result buffer!")
-        print(f"  {result_buf.size=}")
-        print(f"  {batch_size*structs.dtype_Result.itemsize=}")
+        print(f"  i need to remake the result buffer!")
+        print(f"    {result_buf.size=}")
+        print(f"    {batch_size*structs.dtype_Result.itemsize=}")
         remake_result_buf(batch_size)
 
-    compute["start_idx"] = start_idx
+    try:
+        compute["start_idx"] = start_idx
+    except:
+        print("WARNING: couldn't set the start_idx")
 
     group_count_x = ceiling_divide(batch_size, GROUP_SIZE_X)
-    print(f" {group_count_x=}")
+    print(f"  {group_count_x=}")
 
-    print(" ok tim to go!")
+    print("  ok tim to go!")
     compute.run(group_x=group_count_x)
 
-    print(" done! readback")
+    print("  done! readback")
     # read back and reinterpret as the same struct array
     result = np.frombuffer(result_buf.read(), dtype=structs.dtype_Result)
 
@@ -109,16 +107,16 @@ def main():
     print(f"{os.getpid() = }")
 
     # N = 100
-    N = RESOLUTION[0] * RESOLUTION[1]
-    # CHUNKS = 8
-    # CHUNK_SIZE=N//CHUNKS
-    CHUNK_SIZE = 2**24
-    CHUNKS = ceiling_divide(N, CHUNK_SIZE)
+    N = 100
+    CHUNKS = 1
+    CHUNK_SIZE=N//CHUNKS
+    # CHUNK_SIZE = 2**24
+    # CHUNKS = ceiling_divide(N, CHUNK_SIZE)
 
     print(f"{CHUNKS=}")
     print(f"{CHUNK_SIZE=}")
 
-    time.sleep(3)
+    # time.sleep(3)
 
     start = time.perf_counter()
     chunk_results = []
@@ -131,8 +129,14 @@ def main():
         # new_data.dump(f"chunk{i:04}.bin")
         print(f"chunk {i} done")
         out_file.write(new_data.tobytes())
-        # chunk_results.append(new_data)
-    results = np.concatenate(chunk_results)
+        chunk_results.append(new_data)
+
+    if len(chunk_results) > 0:
+        print("concatenating...")
+        results = np.concatenate(chunk_results)
+    else:
+        results = []
+
     del chunk_results
 
     end = time.perf_counter()
@@ -158,21 +162,5 @@ def main():
         pprint(struct_to_dict(results[N-1]))
     print("dtype itemsize:", structs.dtype_Result.itemsize)
 
-    if False:
-        for y in range(RESOLUTION[1]):
-            for x in range(RESOLUTION[0]):
-                v = struct_to_dict(results[x+y*RESOLUTION[0]])["time_to_escape"]
-                print(f"\x1b[48;5;{v+16}m  ", end="")
-            print()
-
-    print(f"{len(results)=}")
-    print(f"{results[0].nbytes=}")
-    print(f"{results.nbytes=}")
-    print('saving...')
-    # with open('results.bin','wb') as f:
-        # f.write(bytes(results))
-    # print("jason!")
-    # with open('results.json', 'w') as f:
-    #     json.dump([struct_to_dict(r) for r in results], f)
 
 main()

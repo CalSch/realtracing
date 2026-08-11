@@ -104,10 +104,10 @@ for struct_name in fields:
         final_size = align_up(offset, struct_align)
         trailing_gap = final_size - offset
         if trailing_gap > 0:
-            print(f"on the end...")
-            print(f" {offset=}")
-            print(f" {final_size=}")
-            print(f" adding gap of {trailing_gap}")
+            # print(f"on the end...")
+            # print(f" {offset=}")
+            # print(f" {final_size=}")
+            # print(f" adding gap of {trailing_gap}")
             py += f"\t('_pad{pad_idx}', np.uint8, {trailing_gap}),\n"
         KNOWN_TYPES[struct_name] = (final_size, struct_align)
         glsl += "};\n"
@@ -131,7 +131,7 @@ with open("structs.h",'r') as f:
 
 
 
-with open("structs.glsl", 'w') as f:
+with open("glsl/structs.glsl", 'w') as f:
     f.write(glsl)
 with open("structs.py", 'w') as f:
     f.write(py)
