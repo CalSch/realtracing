@@ -463,7 +463,7 @@ class CStructParser:
             'int32_t': 4,
             'uint32_t': 4,
             'int64_t': 8,
-            'uint64_t': 8
+            'uint64_t': 8,
         }
         if type_name in self.struct_fields:
             return self.struct_sizes[type_name]

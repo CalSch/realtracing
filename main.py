@@ -34,6 +34,10 @@ def dict_to_struct(d: dict[str, Any] | list | tuple, dtype: np.dtype) -> np.void
             arr[name] = val
     return arr
 
+def struct_to_dict(x):
+    if x.dtype.names is None:
+        return x.tolist() if x.shape else x.item()
+    return {name: struct_to_dict(x[name]) for name in x.dtype.names if not name.startswith("_")}
 
 
 
@@ -41,7 +45,8 @@ GROUP_SIZE_X = 1024
 
 
 COMPUTE_SHADER = open("glsl/theshader.glsl",'r').read()
-COMPUTE_SHADER = re.sub(r"#include \"(.*)\"", lambda m: open("glsl/"+m.group(1),'r').read(), COMPUTE_SHADER)
+COMPUTE_SHADER = re.sub(r"#include \"(.*)\"", lambda m: open("glsl/"+m.group(1),'r').read(), COMPUTE_SHADER) # process #include's
+COMPUTE_SHADER = re.sub(r"#include \"(.*)\"", "", COMPUTE_SHADER) # remove all nested #include's
 COMPUTE_SHADER += f"\nlayout(local_size_x = {GROUP_SIZE_X}) in;\n"
 
 with open(".output.glsl",'w') as f:
@@ -55,14 +60,36 @@ def ceiling_divide(x: int, y: int) -> int:
     return (x + y - 1) // y
 
 
-
-print("  making input buf")
-INPUT_BUF_INIT = dict_to_struct({
-}, structs.dtype_Input)
-input_buf = ctx.buffer(INPUT_BUF_INIT.tobytes())
-input_buf.bind_to_storage_buffer(1)
-
 result_buf: moderngl.Buffer = ctx.buffer(b"67")
+
+def make_input_buf():
+    print("making input buf")
+    INPUT_BUF_INIT = dict_to_struct({
+        # "scene": {
+        #     "tris": [
+        #         {"p0": [0,0,2], "p1": [0,1,2], "p2": [1,0,2]}
+        #     ],
+        #     "tri_count": 1
+        # }
+    }, structs.dtype_Input)
+    # INPUT_BUF_INIT = np.array([], dtype=structs.dtype_Input)
+
+    def add_tri(t: list[list[float]]):
+        idx = INPUT_BUF_INIT['scene']['tri_count']
+        for p in [(0,'p0'),(1,'p1'),(2,'p2')]:
+            INPUT_BUF_INIT['scene']['tris'][idx][p[1]]['x'] = t[p[0]][0]
+            INPUT_BUF_INIT['scene']['tris'][idx][p[1]]['y'] = t[p[0]][1]
+            INPUT_BUF_INIT['scene']['tris'][idx][p[1]]['z'] = t[p[0]][2]
+        INPUT_BUF_INIT['scene']['tri_count'] += 1
+
+    add_tri([[-3,0,2],[2,4,2],[2,-2,2]])
+    add_tri([[0,0,1],[0,1,1],[1,0,1.5]])
+
+    pprint(struct_to_dict(INPUT_BUF_INIT))
+    
+    input_buf = ctx.buffer(INPUT_BUF_INIT.tobytes())
+    input_buf.bind_to_storage_buffer(1)
+
 
 
 def remake_result_buf(size):
@@ -106,8 +133,10 @@ def main():
 
     print(f"{os.getpid() = }")
 
+    make_input_buf()
+
     # N = 100
-    N = 100
+    N = 8000
     CHUNKS = 1
     CHUNK_SIZE=N//CHUNKS
     # CHUNK_SIZE = 2**24
@@ -144,10 +173,6 @@ def main():
     # result = run_batch(1,N)
 
     # print(result[:5])
-    def struct_to_dict(x):
-        if x.dtype.names is None:
-            return x.tolist() if x.shape else x.item()
-        return {name: struct_to_dict(x[name]) for name in x.dtype.names if not name.startswith("_")}
 
 
     if False:

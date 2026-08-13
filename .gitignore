@@ -5,3 +5,5 @@ __pycache__/
 .venv/
 .output.glsl
 results.bin
+cvis
+structs.h

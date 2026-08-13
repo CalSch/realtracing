@@ -33,26 +33,26 @@ float floatConstruct(uint m) {
 }
 
 // Pseudo-random value in half-open range [0:1].
-float randomS(float x) {
+float randomSeeded(float x) {
 	return floatConstruct(hash(floatBitsToUint(x)));
 }
-float randomS(vec2 v) {
+float randomSeeded(vec2 v) {
 	return floatConstruct(hash(floatBitsToUint(v)));
 }
-float randomS(vec3 v) {
+float randomSeeded(vec3 v) {
 	return floatConstruct(hash(floatBitsToUint(v)));
 }
-float randomS(vec4 v) {
+float randomSeeded(vec4 v) {
 	return floatConstruct(hash(floatBitsToUint(v)));
 }
 
-vec3 random3S(float x) {
+vec3 random3Seeded(float x) {
 	vec3 v = vec3(0, 0, 0);
-	x = randomS(x);
+	x = randomSeeded(x);
 	v.x = x;
-	x = randomS(x);
+	x = randomSeeded(x);
 	v.y = x;
-	x = randomS(x);
+	x = randomSeeded(x);
 	v.z = x;
 	return v;
 }
@@ -61,18 +61,27 @@ vec3 random3S(float x) {
 
 float rng_seed;
 
-float random() {
-	rng_seed = randomS(rng_seed);
+// Random value in [0, 1]
+float random_u() {
+	rng_seed = randomSeeded(rng_seed);
 	return rng_seed;
 }
+// Random value in [-1, 1]
+float random_s() {
+	return random_u()*2.0-1.0;
+}
+
 float random_norm_dist() {
 	// Thanks to https://stackoverflow.com/a/6178290
-    float theta = 2 * 3.1415926 * random();
-    float rho = sqrt(-2 * log(random()));
+    float theta = 2 * 3.1415926 * random_u();
+    float rho = sqrt(-2 * log(random_u()));
     return rho * cos(theta);
 }
-vec3 random3() {
-	return vec3(random(), random(), random());
+vec3 random3_u() {
+	return vec3(random_u(), random_u(), random_u());
+}
+vec3 random3_s() {
+	return random3_u()*2.0-1.0;
 }
 vec3 random_dir() {
 	return normalize(vec3(

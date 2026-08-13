@@ -18,6 +18,9 @@ class CTypeFormat:
         'float': ('f', 4),
         'double': ('d', 8),
         'long double': ('d', 8),
+
+        'uint': ('I', 4),
+        'bool': ('i', 1),
     }
 
     # stdint.h fixed-width types
