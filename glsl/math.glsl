@@ -30,6 +30,10 @@ float ray_triangle(Ray r, Triangle t) {
     return ray_triangle(r.origin, r.dir, t.p0, t.p1, t.p2, 1e-6);
 }
 
+Triangle flip_tri(Triangle t) {
+    return Triangle(t.p0, t.p2, t.p1);
+}
+
 Hit cast_ray(Ray r, Scene s) {
     Hit closest;
     closest.did_hit = false;
@@ -45,6 +49,8 @@ Hit cast_ray(Ray r, Scene s) {
             closest.tri_idx = i;
         }
     }
+
+    closest.pos = r.origin + r.dir * closest.dist;
 
     return closest;
 }

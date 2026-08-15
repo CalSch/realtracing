@@ -8,6 +8,7 @@ import time
 import json
 import sys
 import os
+import random
 
 
 # clud's code
@@ -54,7 +55,10 @@ with open(".output.glsl",'w') as f:
 
 ctx = moderngl.create_standalone_context(require=430)
 
+print("compute shader compiling...")
 compute = ctx.compute_shader(COMPUTE_SHADER)
+print("compute shader done compiling")
+
 
 def ceiling_divide(x: int, y: int) -> int:
     return (x + y - 1) // y
@@ -62,30 +66,14 @@ def ceiling_divide(x: int, y: int) -> int:
 
 result_buf: moderngl.Buffer = ctx.buffer(b"67")
 
+INPUT_BUF_INIT: np.void
+
 def make_input_buf():
+    global INPUT_BUF_INIT
     print("making input buf")
-    with open("../out.scene", "rb") as f:
+
+    with open("inputs.bin", "rb") as f:
         INPUT_BUF_INIT = np.frombuffer(f.read(), structs.dtype_Input)
-    # INPUT_BUF_INIT = dict_to_struct({
-    #     # "scene": {
-    #     #     "tris": [
-    #     #         {"p0": [0,0,2], "p1": [0,1,2], "p2": [1,0,2]}
-    #     #     ],
-    #     #     "tri_count": 1
-    #     # }
-    # }, structs.dtype_Input)
-    # # INPUT_BUF_INIT = np.array([], dtype=structs.dtype_Input)
-
-    # def add_tri(t: list[list[float]]):
-    #     idx = INPUT_BUF_INIT['scene']['tri_count']
-    #     for p in [(0,'p0'),(1,'p1'),(2,'p2')]:
-    #         INPUT_BUF_INIT['scene']['tris'][idx][p[1]]['x'] = t[p[0]][0]
-    #         INPUT_BUF_INIT['scene']['tris'][idx][p[1]]['y'] = t[p[0]][1]
-    #         INPUT_BUF_INIT['scene']['tris'][idx][p[1]]['z'] = t[p[0]][2]
-    #     INPUT_BUF_INIT['scene']['tri_count'] += 1
-
-    # add_tri([[-3,0,2],[2,4,2],[2,-2,2]])
-    # add_tri([[0,0,1],[0,1,1],[1,0,1.5]])
 
     pprint(struct_to_dict(INPUT_BUF_INIT))
     
@@ -115,8 +103,10 @@ def run_batch(start_idx: int, batch_size: int) -> np.ndarray:
 
     try:
         compute["start_idx"] = start_idx
+        compute["seed"] = random.randrange(0,1024) # TODO: better range
     except:
-        print("WARNING: couldn't set the start_idx")
+        print("WARNING: couldn't set one of the uniforms")
+        print(list(compute))
 
     group_count_x = ceiling_divide(batch_size, GROUP_SIZE_X)
     print(f"  {group_count_x=}")
@@ -137,8 +127,11 @@ def main():
 
     make_input_buf()
 
+    with open("inputs.bin",'wb') as f:
+        f.write(INPUT_BUF_INIT.tobytes())
+
     # N = 100
-    N = 8000
+    N = 400
     CHUNKS = 1
     CHUNK_SIZE=N//CHUNKS
     # CHUNK_SIZE = 2**24
