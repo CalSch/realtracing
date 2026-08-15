@@ -71,26 +71,9 @@ INPUT_BUF_INIT: np.void
 def make_input_buf():
     global INPUT_BUF_INIT
     print("making input buf")
-    INPUT_BUF_INIT = dict_to_struct({
-    }, structs.dtype_Input)
-    # INPUT_BUF_INIT = np.array([], dtype=structs.dtype_Input)
 
-    def add_tri(t: list[list[float]]):
-        idx = INPUT_BUF_INIT['scene']['tri_count']
-        for p in [(0,'p0'),(1,'p1'),(2,'p2')]:
-            INPUT_BUF_INIT['scene']['tris'][idx][p[1]]['x'] = t[p[0]][0]
-            INPUT_BUF_INIT['scene']['tris'][idx][p[1]]['y'] = t[p[0]][1]
-            INPUT_BUF_INIT['scene']['tris'][idx][p[1]]['z'] = t[p[0]][2]
-        INPUT_BUF_INIT['scene']['tri_count'] += 1
-
-    # add_tri([[-3,0,2],[2,4,2],[2,-2,2]])
-    # add_tri([[0,0,1],[0,1,1],[1,0,1.5]])
-    add_tri([ [-5,5, 1], [5,-5, 1], [-5,-5, 1] ])
-    add_tri([ [-5,5, 1], [5,-5, 1], [ 5, 5, 1] ])
-    add_tri([ [-5,5,-1], [5,-5,-1], [-5,-5,-1] ])
-    add_tri([ [-5,5,-1], [5,-5,-1], [ 5, 5,-1] ])
-    # for _ in range(5):
-    #     add_tri([[random.random()*10-5 for _ in range(3)] for _ in range(3)])
+    with open("inputs.bin", "rb") as f:
+        INPUT_BUF_INIT = np.frombuffer(f.read(), structs.dtype_Input)
 
     pprint(struct_to_dict(INPUT_BUF_INIT))
     
