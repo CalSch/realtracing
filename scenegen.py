@@ -65,7 +65,7 @@ with open(path, "r") as f:
 	# f.write("save_scene('out.scene')\n")
 	# print(t + str(fn))
 
-with open("out.scene", "wb") as f:
+with open("inputs.bin", "wb") as f:
 	f.write(inp.tobytes())
 
 
