@@ -1,7 +1,7 @@
 #include "glsl_include.h"
 
-#define MAX_ITERS 256
-#define MAX_TRIANGLES 4
+#define MAX_BOUNCES 800
+#define MAX_TRIANGLES 256
 
 
 struct Triangle {
@@ -24,12 +24,15 @@ struct Hit {
     bool did_hit;
     Ray ray;
     float dist;
+    vec3 pos;
     uint tri_idx;
 };
 
 struct Result {
     int id;
-    Hit hit;
+    Hit bounces[MAX_BOUNCES];
+    Ray last_ray;
+    Ray last_ray2;
 };
 
 struct Input {

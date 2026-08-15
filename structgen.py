@@ -131,14 +131,16 @@ for struct_name in fields:
 # -------------------------------------------------------------------------------------------------
 # process #define's
 
-for line in INPUT_TEXT.split("\n"):
-    m = re.match(r"^#define\s+(?P<name>\w+)\s+(?P<value>.*)\s+$",line)
-    if m:
-        print(m.groupdict())
-        py += f"{m.group('name')} = {m.group('value')}"
-        # glsl and c have the same syntax
-        glsl += line
-        c += line
+with open("struct_def.h",'r') as f:
+    for line in f:
+        # print(line)
+        m = re.match(r"^#define\s+(?P<name>\w+)\s+(?P<value>.*)\s+$",line)
+        if m:
+            print(m.groupdict())
+            py += f"{m.group('name')} = {m.group('value')}\n"
+            # glsl and c have the same syntax
+            glsl += line
+            c += line
 
 
 # -------------------------------------------------------------------------------------------------
