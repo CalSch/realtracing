@@ -4,14 +4,16 @@ const float infinity = 1.0 / 0.0;
 
 #include "structs.glsl"
 #include "random.glsl"
-#include "math.glsl"
 
 layout(std430, binding = 1) buffer InputBuffer {
-    Input input_data;
+    Scene scene;
+    Triangle triangles[];
 };
 layout(std430, binding = 0) buffer ResultBuffer {
     Result results[];
 };
+
+#include "math.glsl"
 
 uniform uint start_idx = 0;
 uniform uint seed = 0;
@@ -32,19 +34,22 @@ void main() {
     res.id = int(idx);
 
     Ray ray = Ray(
-        vec3(0,0,0),
+        vec3(0,1,0),
         // random3_s()*1.0,
-        // random_dir()
-        normalize(random3_s()*vec3(1,1,1)+vec3(0,0,4))
+        random_dir()
+        // normalize(random3_s()*vec3(1,1,1)+vec3(0,0,4))
     );
     // Ray ray = Ray(
     //     vec3(random_s()*5.0,random_s()*5.0,0),
     //     normalize(vec3(0,0,1))
     // );
 
-    for (int i=0;i<MAX_BOUNCES;i++) {
-        Hit h = cast_ray(ray, input_data.scene);
-        Triangle t = input_data.scene.tris[h.tri_idx];
+    Hit h;
+    h.did_hit = true;
+
+    for (int i=0; i<MAX_BOUNCES; i++) {
+        h = cast_ray(ray);
+        Triangle t = triangles[h.tri_idx];
         vec3 t_norm = normalize(cross(t.p1-t.p0, t.p2-t.p0));
         res.bounces[i] = h;
         res.last_ray = ray;

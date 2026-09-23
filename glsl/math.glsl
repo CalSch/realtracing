@@ -34,15 +34,15 @@ Triangle flip_tri(Triangle t) {
     return Triangle(t.p0, t.p2, t.p1);
 }
 
-Hit cast_ray(Ray r, Scene s) {
+Hit cast_ray(Ray r) {
     Hit closest;
     closest.did_hit = false;
     closest.dist = infinity;
     closest.tri_idx = 0;
     closest.ray = r;
 
-    for (uint i=0;i<s.tri_count;i++) {
-        float dist = ray_triangle(r, s.tris[i]);
+    for (uint i=0;i<triangles.length();i++) {
+        float dist = ray_triangle(r, triangles[i]);
         if (dist > 0 && dist < closest.dist) {
             closest.did_hit = true;
             closest.dist = dist;

@@ -42,7 +42,7 @@ def struct_to_dict(x):
 
 
 
-GROUP_SIZE_X = 1024
+GROUP_SIZE_X = 256
 
 
 COMPUTE_SHADER = open("glsl/theshader.glsl",'r').read()
@@ -56,8 +56,11 @@ with open(".output.glsl",'w') as f:
 ctx = moderngl.create_standalone_context(require=430)
 
 print("compute shader compiling...")
+compile_start = time.perf_counter()
 compute = ctx.compute_shader(COMPUTE_SHADER)
+compile_end = time.perf_counter()
 print("compute shader done compiling")
+print(f"took {compile_end-compile_start} sec")
 
 
 def ceiling_divide(x: int, y: int) -> int:
@@ -73,9 +76,13 @@ def make_input_buf():
     print("making input buf")
 
     with open("inputs.bin", "rb") as f:
-        INPUT_BUF_INIT = np.frombuffer(f.read(), structs.dtype_Input)
+        contents = f.read()
+        print(f"{len(contents)=}")
+        print(f"{structs.dtype_Input.itemsize=}")
+        print(f"{structs.dtype_Scene.itemsize=}")
+        INPUT_BUF_INIT = np.frombuffer(contents, structs.dtype_Input)
 
-    pprint(struct_to_dict(INPUT_BUF_INIT))
+    # pprint(struct_to_dict(INPUT_BUF_INIT))
     
     input_buf = ctx.buffer(INPUT_BUF_INIT.tobytes())
     input_buf.bind_to_storage_buffer(1)
@@ -131,7 +138,7 @@ def main():
         f.write(INPUT_BUF_INIT.tobytes())
 
     # N = 100
-    N = 400
+    N = 80000
     CHUNKS = 1
     CHUNK_SIZE=N//CHUNKS
     # CHUNK_SIZE = 2**24
@@ -155,32 +162,17 @@ def main():
         out_file.write(new_data.tobytes())
         chunk_results.append(new_data)
 
-    if len(chunk_results) > 0:
-        print("concatenating...")
-        results = np.concatenate(chunk_results)
-    else:
-        results = []
-
     del chunk_results
+
+    out_file.close()
 
     end = time.perf_counter()
     print(f"{end-start=}")
+
+
     # result = run_batch(1,N)
 
     # print(result[:5])
-
-
-    if False:
-        print(results[0])
-        print(results[1])
-        pprint(struct_to_dict(results[0]))
-        pprint(struct_to_dict(results[1]))
-        pprint(struct_to_dict(results[2]))
-        print("------")
-        pprint(struct_to_dict(results[N-3]))
-        pprint(struct_to_dict(results[N-2]))
-        pprint(struct_to_dict(results[N-1]))
-    print("dtype itemsize:", structs.dtype_Result.itemsize)
 
 
 main()

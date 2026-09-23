@@ -1,7 +1,8 @@
 #include "glsl_include.h"
 
-#define MAX_BOUNCES 800
-#define MAX_TRIANGLES 256
+#define MAX_BOUNCES 8
+#define MAX_TRIANGLES 1400
+#define MAX_BVH_NODES MAX_TRIANGLES
 
 
 struct Triangle {
@@ -15,9 +16,22 @@ struct Ray {
     vec3 dir;
 };
 
-struct Scene {
-    Triangle tris[MAX_TRIANGLES];
+struct AABB {
+    vec3 min;
+    vec3 max;
+};
+
+struct BVHNode {
+    AABB bounds;
+    uint childA;
+    uint childB;
+    uint tri_start_idx;
     uint tri_count;
+};
+
+struct Scene {
+    uint tri_count;
+    BVHNode bvh_nodes[MAX_BVH_NODES];
 };
 
 struct Hit {
@@ -37,4 +51,5 @@ struct Result {
 
 struct Input {
     Scene scene;
+    Triangle triangles[MAX_TRIANGLES];
 };

@@ -62,7 +62,7 @@ int main() {
 
         printf("these should match:\n");
         LOGd(file_size);
-        LOGd(sizeof(s_Input));
+        LOGd(sizeof(input));
 
         fread(&input, sizeof(input), 1, f);
 
@@ -97,18 +97,19 @@ int main() {
         DrawGrid(10,1);
 
         for (int i=0;i<input.scene.tri_count;i++) {
-            s_Triangle t = input.scene.tris[i];
+            s_Triangle t = input.triangles[i];
+            // printf("triangle: %f %f %f\n",t.p0.x,t.p0.y,t.p0.z);
             DrawTriangle3D(
                 conv_vec3(t.p0),
                 conv_vec3(t.p1),
                 conv_vec3(t.p2),
-                color_hash(i, 0.7)
+                color_hash(i, 0.4)
             );
             DrawTriangle3D(
                 conv_vec3(t.p1),
                 conv_vec3(t.p0),
                 conv_vec3(t.p2),
-                color_hash(i, 0.4)
+                color_hash(i, 0.7)
             );
         }
 
@@ -130,10 +131,10 @@ int main() {
 
                 Color c = color_hash(h.tri_idx, 0.9);
 
-                DrawLine3D(orig, hit, WHITE);
-                DrawCube(hit,0.02,0.02,0.02,c);
+                // DrawLine3D(orig, hit, WHITE);
+                DrawCube(hit,0.01,0.01,0.01,WHITE);
             }
-            printf("%f\n", r.last_ray2.dir.x);
+            // printf("%f\n", r.last_ray2.dir.x);
             // DrawRay((Ray){.position=conv_vec3(r.last_ray.origin), .direction=conv_vec3(r.last_ray.dir)}, RED);
             // DrawRay((Ray){.position=conv_vec3(last_hit.pos), .direction=conv_vec3(r.last_ray2.dir)}, GREEN);
 
