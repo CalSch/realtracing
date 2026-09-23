@@ -138,8 +138,8 @@ def main():
         f.write(INPUT_BUF_INIT.tobytes())
 
     # N = 100
-    N = 80000
-    CHUNKS = 1
+    N = 8_000_000
+    CHUNKS = 200
     CHUNK_SIZE=N//CHUNKS
     # CHUNK_SIZE = 2**24
     # CHUNKS = ceiling_divide(N, CHUNK_SIZE)
@@ -150,19 +150,15 @@ def main():
     # time.sleep(3)
 
     start = time.perf_counter()
-    chunk_results = []
 
     out_file = open('results.bin','wb')
     
     for i in range(CHUNKS):
         print(f"chunk {i}/{CHUNKS} = {i/CHUNKS*100:.4}%")
         new_data = run_batch(i*CHUNK_SIZE, CHUNK_SIZE)
-        # new_data.dump(f"chunk{i:04}.bin")
         print(f"chunk {i} done")
         out_file.write(new_data.tobytes())
-        chunk_results.append(new_data)
 
-    del chunk_results
 
     out_file.close()
 
