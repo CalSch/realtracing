@@ -8,4 +8,6 @@ results.bin
 inputs.bin
 cvis
 structs.h
-scene.{obj,mtl,blend1}
+scene.obj
+scene.mtl
+scene.blend1
