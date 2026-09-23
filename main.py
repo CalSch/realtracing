@@ -138,8 +138,8 @@ def main():
         f.write(INPUT_BUF_INIT.tobytes())
 
     # N = 100
-    N = 8_000_000
-    CHUNKS = 200
+    N = 80000
+    CHUNKS = 1
     CHUNK_SIZE=N//CHUNKS
     # CHUNK_SIZE = 2**24
     # CHUNKS = ceiling_divide(N, CHUNK_SIZE)
