@@ -59,7 +59,7 @@ vec3 random3Seeded(float x) {
 
 
 
-float rng_seed;
+float rng_seed = 0;
 
 // Random value in [0, 1]
 float random_u() {
