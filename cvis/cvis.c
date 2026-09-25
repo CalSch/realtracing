@@ -1,10 +1,11 @@
-#include "structs.h"
+#include "../structs.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <raylib.h>
 #include <raymath.h>
 
 #define LOGd(val) printf(#val " = %d\n", val)
+#define LOGfmt(val,fmt) printf(#val " = " fmt "\n", val)
 
 
 Vector3 conv_vec3(s_vec3 v) {return (Vector3){-v.x,v.y,v.z};} // do -x bc raylib is right-handed (gross)
@@ -15,8 +16,60 @@ Color color_hash(int i, float value) {
     return c;
 }
 
+Mesh point_mesh;
+Material point_material;
+float point_size = 0.005;
+
+int hit_point_count = 0;
+Matrix* hit_point_transforms = NULL;
+
+void calc_hit_point_transforms(int res_count, s_Result* results) {
+    printf("\ngenerating hit point transforms...\n");
+    hit_point_count = res_count*MAX_BOUNCES;
+
+    hit_point_transforms = calloc(hit_point_count,sizeof(Matrix));
+
+    LOGd(hit_point_count);
+    printf("takes up %d MiB\n", hit_point_count*sizeof(Matrix)/1024/1024);
+
+    // Matrix default_matrix = MatrixScale(point_size,point_size,point_size);
+
+    for (int i=0;i<res_count;i++) {
+        s_Result r = results[i];
+
+        for (int j=0;j<MAX_BOUNCES;j++) {
+            s_Hit h = r.bounces[j];
+
+            int idx = i*MAX_BOUNCES + j;
+
+            if (!h.did_hit) {
+                hit_point_transforms[idx] = MatrixScale(0,0,0);
+            } else {
+                Vector3 p = conv_vec3(h.pos);
+                hit_point_transforms[idx] = MatrixMultiply(MatrixScale(point_size,point_size,point_size), MatrixTranslate(p.x,p.y,p.z));
+            }
+
+        }
+    }
+
+    if (0) {
+        Matrix M=hit_point_transforms[0];
+        for (int row=0;row<4;row++) {
+            for (int col=0;col<4;col++)
+                printf("%+f ",MatrixToFloat(M)[col*4+row]);
+            printf("\n");
+        }
+    }
+
+    printf("done!\n");
+}
+void draw_bounce_points() {
+    DrawMeshInstanced(point_mesh, point_material, hit_point_transforms, hit_point_count);
+}
+
 int main() {
     printf("hello wold!\n");
+
 
     s_Result* results = NULL;
     size_t result_count = 0;
@@ -81,6 +134,12 @@ int main() {
     DisableCursor();
 
     Camera3D cam = (Camera3D){(Vector3){2,2,0},(Vector3){0,0,0},(Vector3){0,1,0},.fovy=60};
+    point_mesh = GenMeshCube(1,1,1);
+    Shader point_shader = LoadShader("cvis/vs.glsl","cvis/fs.glsl");
+    point_material = LoadMaterialDefault();
+    point_material.shader=point_shader;
+
+    calc_hit_point_transforms(result_count,results);
 
     while (!WindowShouldClose()) {
 
@@ -113,6 +172,7 @@ int main() {
             );
         }
 
+        if (0)
         for (int i=0;i<result_count;i++) {
             s_Result r = results[i];
 
@@ -132,13 +192,15 @@ int main() {
                 Color c = color_hash(h.tri_idx, 0.9);
 
                 // DrawLine3D(orig, hit, WHITE);
-                DrawCube(hit,0.01,0.01,0.01,WHITE);
+                // DrawCube(hit,0.01,0.01,0.01,WHITE);
             }
             // printf("%f\n", r.last_ray2.dir.x);
             // DrawRay((Ray){.position=conv_vec3(r.last_ray.origin), .direction=conv_vec3(r.last_ray.dir)}, RED);
             // DrawRay((Ray){.position=conv_vec3(last_hit.pos), .direction=conv_vec3(r.last_ray2.dir)}, GREEN);
 
         }
+        
+        draw_bounce_points();
 
         DrawLine3D((Vector3){0,0,0},conv_vec3((s_vec3){1,0,0}),RED);
         DrawLine3D((Vector3){0,0,0},conv_vec3((s_vec3){0,1,0}),GREEN);

@@ -6,7 +6,7 @@ __pycache__/
 .output.glsl
 results.bin
 inputs.bin
-cvis
+cvis/cvis
 structs.h
 scene.obj
 scene.mtl
