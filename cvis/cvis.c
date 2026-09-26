@@ -153,9 +153,9 @@ int main() {
     while (!WindowShouldClose()) {
 
         if (IsKeyDown(KEY_LEFT_BRACKET))
-            cam.fovy*=1.02;
+            cam.fovy *= 1.0+(1.0 / (float)GetFPS());
         if (IsKeyDown(KEY_RIGHT_BRACKET))
-            cam.fovy/=1.02;
+            cam.fovy /= 1.0+(1.0 / (float)GetFPS());
 
         if (IsKeyPressed(KEY_F1)) {
             printf("taking a screenshot\n");
