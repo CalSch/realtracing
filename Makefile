@@ -16,4 +16,4 @@ results.bin: inputs.bin structs.py main.py glsl/*.glsl
 	uv run main.py
 
 clean:
-	rm -vf .output.glsl cvis {inputs,results}.bin scene.{obj,mtl} structs.{h,py} glsl/structs.glsl
+	rm -vf .output.glsl cvis/cvis {inputs,results}.bin scene.{obj,mtl} structs.{h,py} glsl/structs.glsl

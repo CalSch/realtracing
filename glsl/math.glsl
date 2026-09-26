@@ -52,6 +52,9 @@ Hit cast_ray(Ray r) {
 
     closest.pos = r.origin + r.dir * closest.dist;
 
+    Triangle t = triangles[closest.tri_idx];
+    closest.normal = normalize(cross(t.p1-t.p0, t.p2-t.p0));
+
     return closest;
 }
 

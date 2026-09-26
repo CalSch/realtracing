@@ -37,7 +37,8 @@ void main() {
         vec3(0,1,0),
         // random3_s()*1.0,
         random_dir()
-        // normalize(random3_s()*vec3(1,1,1)+vec3(0,0,4))
+        // normalize(random_dir()+vec3(-8,15,-8))
+        // normalize(vec3(1,2,3) + random_dir()*0.005 )
     );
     // Ray ray = Ray(
     //     vec3(random_s()*5.0,random_s()*5.0,0),
@@ -49,17 +50,27 @@ void main() {
 
     for (int i=0; i<MAX_BOUNCES; i++) {
         h = cast_ray(ray);
-        Triangle t = triangles[h.tri_idx];
-        vec3 t_norm = normalize(cross(t.p1-t.p0, t.p2-t.p0));
+
+        if (random_u() < 0.0)
+            h.did_hit = false;
+
         res.bounces[i] = h;
         res.last_ray = ray;
+
+        vec3 specular_dir = reflect(ray.dir,h.normal);
+        vec3 diffuse_dir = normalize(random_dir() + h.normal);
+        bool is_diffuse = random_u()<0.5;
+        vec3 new_dir = mix(specular_dir, diffuse_dir, is_diffuse?1:0);
+
         ray = Ray(
             h.pos,
-            reflect(ray.dir,t_norm)
-            // normalize(random_dir()+t_norm)
+            new_dir
         );
+
         ray.origin += ray.dir * 0.001;
         res.last_ray2 = ray;
+
+
         if (!h.did_hit)
             break;
     }

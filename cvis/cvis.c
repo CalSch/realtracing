@@ -10,9 +10,9 @@
 
 Vector3 conv_vec3(s_vec3 v) {return (Vector3){-v.x,v.y,v.z};} // do -x bc raylib is right-handed (gross)
 
-Color color_hash(int i, float value) {
+Color color_hash(int i, float sat, float value) {
     SetRandomSeed((i+412)*19);
-    Color c = ColorFromHSV(GetRandomValue(0,360), 1, value);
+    Color c = ColorFromHSV(GetRandomValue(0,360), sat, value);
     return c;
 }
 
@@ -43,7 +43,8 @@ void calc_hit_point_transforms(int res_count, s_Result* results) {
             int idx = i*MAX_BOUNCES + j;
 
             if (!h.did_hit) {
-                hit_point_transforms[idx] = MatrixScale(0,0,0);
+                // hit_point_transforms[idx] = MatrixScale(0,0,0);
+                break;
             } else {
                 Vector3 p = conv_vec3(h.pos);
                 hit_point_transforms[idx] = MatrixMultiply(MatrixScale(point_size,point_size,point_size), MatrixTranslate(p.x,p.y,p.z));
@@ -51,6 +52,14 @@ void calc_hit_point_transforms(int res_count, s_Result* results) {
 
         }
     }
+
+    int unused_count = 0;
+    for (int i=0;i<hit_point_count;i++) {
+        if (hit_point_transforms[i].m15 == 0)
+            unused_count++;
+    }
+    LOGd(unused_count);
+    printf("%d unused / %d total = %2.2f%% unused\n", unused_count, hit_point_count, 100.0*(float)unused_count/(float)hit_point_count);
 
     if (0) {
         Matrix M=hit_point_transforms[0];
@@ -143,6 +152,25 @@ int main() {
 
     while (!WindowShouldClose()) {
 
+        if (IsKeyDown(KEY_LEFT_BRACKET))
+            cam.fovy*=1.02;
+        if (IsKeyDown(KEY_RIGHT_BRACKET))
+            cam.fovy/=1.02;
+
+        if (IsKeyPressed(KEY_F1)) {
+            printf("taking a screenshot\n");
+            // TakeScreenshot("screenshot.png");
+            char path_buf[256];
+            for (int i=0;i<=999;i++) {
+                sprintf(path_buf,"stuff/%03d.png",i);
+                if (!FileExists(path_buf)) {
+                    printf("saving to %s\n",path_buf);
+                    TakeScreenshot(path_buf);
+                    break;
+                }
+            }
+        }
+
         // printf("time = %f frame = %f\n",GetTime(),GetFrameTime());
 
         // UpdateCamera(&cam, CAMERA_ORBITAL);
@@ -162,17 +190,17 @@ int main() {
                 conv_vec3(t.p0),
                 conv_vec3(t.p1),
                 conv_vec3(t.p2),
-                color_hash(i, 0.4)
+                color_hash(i, 0.5, 0.3)
             );
             DrawTriangle3D(
                 conv_vec3(t.p1),
                 conv_vec3(t.p0),
                 conv_vec3(t.p2),
-                color_hash(i, 0.7)
+                color_hash(i, 0.9, 0.5)
             );
         }
 
-        if (0)
+        // if (0)
         for (int i=0;i<result_count;i++) {
             s_Result r = results[i];
 
@@ -189,9 +217,10 @@ int main() {
 
                 Vector3 hit = conv_vec3(h.pos);
 
-                Color c = color_hash(h.tri_idx, 0.9);
+                // Color c = color_hash(h.tri_idx, 0.9);
 
-                // DrawLine3D(orig, hit, WHITE);
+                DrawLine3D(orig, hit, WHITE);
+                DrawLine3D(hit,Vector3Add(hit,Vector3Scale(conv_vec3(h.normal),0.25)),MAGENTA);
                 // DrawCube(hit,0.01,0.01,0.01,WHITE);
             }
             // printf("%f\n", r.last_ray2.dir.x);

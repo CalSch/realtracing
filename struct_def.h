@@ -1,6 +1,6 @@
 #include "glsl_include.h"
 
-#define MAX_BOUNCES 8
+#define MAX_BOUNCES 2
 #define MAX_TRIANGLES 1400
 #define MAX_BVH_NODES MAX_TRIANGLES
 
@@ -39,6 +39,7 @@ struct Hit {
     Ray ray;
     float dist;
     vec3 pos;
+    vec3 normal;
     uint tri_idx;
 };
 
