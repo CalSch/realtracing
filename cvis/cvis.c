@@ -16,12 +16,73 @@ Color color_hash(int i, float sat, float value) {
     return c;
 }
 
+s_Result* results = NULL;
+size_t result_count = 0;
+s_Input input;
+
 Mesh point_mesh;
 Material point_material;
 float point_size = 0.005;
 
 int hit_point_count = 0;
 Matrix* hit_point_transforms = NULL;
+
+Material triangle_material;
+
+
+
+void load_results() {
+    {
+        FILE* f = fopen("results.bin","rb");
+
+        if (f == NULL) {
+            perror("open() results.bin");
+            exit(1);
+        }
+
+        fseek(f, 0, SEEK_END);
+        size_t file_size = ftell(f);
+        rewind(f);
+
+        result_count = file_size / sizeof(s_Result);
+        LOGd(file_size);
+        LOGd(sizeof(s_Result));
+        LOGd(result_count);
+        LOGd(result_count*sizeof(s_Result) - file_size);
+
+        // allocate space for the data
+        results = calloc(result_count, sizeof(s_Result));
+
+        // read in the data
+        fread(results, sizeof(s_Result), result_count, f);
+
+        fclose(f);
+    }
+
+    {
+        FILE* f = fopen("inputs.bin","rb");
+
+        if (f == NULL) {
+            perror("open() inputs.bin");
+            exit(1);
+        }
+
+        fseek(f, 0, SEEK_END);
+        size_t file_size = ftell(f);
+        rewind(f);
+
+        printf("these should match:\n");
+        LOGd(file_size);
+        LOGd(sizeof(input));
+
+        fread(&input, sizeof(input), 1, f);
+
+        fclose(f);
+    }
+}
+
+
+
 
 void calc_hit_point_transforms(int res_count, s_Result* results) {
     printf("\ngenerating hit point transforms...\n");
@@ -70,8 +131,9 @@ void calc_hit_point_transforms(int res_count, s_Result* results) {
         }
     }
 
-    printf("done!\n");
+    printf("done!\n\n");
 }
+
 void draw_bounce_points() {
     DrawMeshInstanced(point_mesh, point_material, hit_point_transforms, hit_point_count);
 }
@@ -79,57 +141,6 @@ void draw_bounce_points() {
 int main() {
     printf("hello wold!\n");
 
-
-    s_Result* results = NULL;
-    size_t result_count = 0;
-    {
-        FILE* f = fopen("results.bin","rb");
-
-        if (f == NULL) {
-            perror("open() results.bin");
-            return 1;
-        }
-
-        fseek(f, 0, SEEK_END);
-        size_t file_size = ftell(f);
-        rewind(f);
-
-        result_count = file_size / sizeof(s_Result);
-        LOGd(file_size);
-        LOGd(sizeof(s_Result));
-        LOGd(result_count);
-        LOGd(result_count*sizeof(s_Result) - file_size);
-
-        // allocate space for the data
-        results = calloc(result_count, sizeof(s_Result));
-
-        // read in the data
-        fread(results, sizeof(s_Result), result_count, f);
-
-        fclose(f);
-    }
-
-    s_Input input;
-    {
-        FILE* f = fopen("inputs.bin","rb");
-
-        if (f == NULL) {
-            perror("open() inputs.bin");
-            return 1;
-        }
-
-        fseek(f, 0, SEEK_END);
-        size_t file_size = ftell(f);
-        rewind(f);
-
-        printf("these should match:\n");
-        LOGd(file_size);
-        LOGd(sizeof(input));
-
-        fread(&input, sizeof(input), 1, f);
-
-        fclose(f);
-    }
 
     // for (int i=0;i<result_count;i++) {
     //     printf("res[%d].ray.orig.x = %f\n", i, results[i].hit.ray.dir.x);
@@ -140,15 +151,43 @@ int main() {
     SetTraceLogLevel(LOG_WARNING);
     InitWindow(1270,720,"gump!");
 
+    double load_start_time = GetTime();
+    {
+        BeginDrawing();
+        ClearBackground(BLACK);
+        DrawText("loading...",10,10,30,WHITE);
+        EndDrawing();
+    }
+
+    load_results();
+    calc_hit_point_transforms(result_count,results);
+
+
     DisableCursor();
 
     Camera3D cam = (Camera3D){(Vector3){2,2,0},(Vector3){0,0,0},(Vector3){0,1,0},.fovy=60};
+
     point_mesh = GenMeshCube(1,1,1);
-    Shader point_shader = LoadShader("cvis/vs.glsl","cvis/fs.glsl");
+    Shader point_shader = LoadShader("cvis/point.vs","cvis/point.fs");
     point_material = LoadMaterialDefault();
     point_material.shader=point_shader;
 
-    calc_hit_point_transforms(result_count,results);
+    Shader triangle_shader = LoadShader("cvis/tri.vs","cvis/tri.fs");
+    triangle_material = LoadMaterialDefault();
+    triangle_material.shader = triangle_shader;
+
+
+
+
+    double load_end_time = GetTime();
+    printf("Load took %f ms\n",1000.0*(load_end_time-load_start_time));
+    {
+        BeginDrawing();
+        ClearBackground(WHITE);
+        DrawText("loaded!",10,10,30,BLACK);
+        EndDrawing();
+    }
+
 
     while (!WindowShouldClose()) {
 
@@ -183,6 +222,7 @@ int main() {
 
         DrawGrid(10,1);
 
+        BeginShaderMode(triangle_shader);
         for (int i=0;i<input.scene.tri_count;i++) {
             s_Triangle t = input.triangles[i];
             // printf("triangle: %f %f %f\n",t.p0.x,t.p0.y,t.p0.z);
@@ -199,6 +239,7 @@ int main() {
                 color_hash(i, 0.9, 0.5)
             );
         }
+        EndShaderMode();
 
         // if (0)
         for (int i=0;i<result_count;i++) {
@@ -219,8 +260,8 @@ int main() {
 
                 // Color c = color_hash(h.tri_idx, 0.9);
 
-                DrawLine3D(orig, hit, WHITE);
-                DrawLine3D(hit,Vector3Add(hit,Vector3Scale(conv_vec3(h.normal),0.25)),MAGENTA);
+                // DrawLine3D(orig, hit, WHITE);
+                // DrawLine3D(hit,Vector3Add(hit,Vector3Scale(conv_vec3(h.normal),0.25)),MAGENTA);
                 // DrawCube(hit,0.01,0.01,0.01,WHITE);
             }
             // printf("%f\n", r.last_ray2.dir.x);
@@ -229,7 +270,7 @@ int main() {
 
         }
         
-        draw_bounce_points();
+        // draw_bounce_points();
 
         DrawLine3D((Vector3){0,0,0},conv_vec3((s_vec3){1,0,0}),RED);
         DrawLine3D((Vector3){0,0,0},conv_vec3((s_vec3){0,1,0}),GREEN);
