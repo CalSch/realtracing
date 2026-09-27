@@ -29,11 +29,13 @@ void main()
     float atten = 0.9;
 
     vec3 normal = normalize(cross(dFdx(fragPosition), dFdy(fragPosition)));
-    // finalColor = fragColor;
-    finalColor = vec4(1,1,1,1);
     float light_fac = dot(normal, normalize(vec3(0,1,0) - fragPosition));
     light_fac *= pow(atten, distance(vec3(0,1,0), fragPosition));
-    finalColor.rgb *= mix(ambient,light,light_fac);
+
+    finalColor = vec4(1,1,1,1);
+    finalColor *= fragColor;
+    // finalColor.rgb *= mix(ambient,light,light_fac);
+    // discard;
     // finalColor.a /= 1000.0*distance(screen_pos.xy, center_screen_pos.xy);
     // finalColor.rg *= screen_pos.xy;
 }
