@@ -21,12 +21,14 @@ size_t result_count = 0;
 s_Input input;
 
 Mesh point_mesh;
+Shader point_shader;
 Material point_material;
 float point_size = 0.005;
 
 int hit_point_count = 0;
 Matrix* hit_point_transforms = NULL;
 
+Shader triangle_shader;
 Material triangle_material;
 
 
@@ -134,6 +136,27 @@ void calc_hit_point_transforms(int res_count, s_Result* results) {
     printf("done!\n\n");
 }
 
+void draw_scene() {
+    BeginShaderMode(triangle_shader);
+    for (int i=0;i<input.scene.tri_count;i++) {
+        s_Triangle t = input.triangles[i];
+        // printf("triangle: %f %f %f\n",t.p0.x,t.p0.y,t.p0.z);
+        DrawTriangle3D(
+            conv_vec3(t.p1),
+            conv_vec3(t.p0),
+            conv_vec3(t.p2),
+            color_hash(i, 0.5, 0.3)
+        );
+        DrawTriangle3D(
+            conv_vec3(t.p0),
+            conv_vec3(t.p1),
+            conv_vec3(t.p2),
+            color_hash(i, 0.9, 0.5)
+        );
+    }
+    EndShaderMode();
+}
+
 void draw_bounce_points() {
     DrawMeshInstanced(point_mesh, point_material, hit_point_transforms, hit_point_count);
 }
@@ -168,12 +191,12 @@ int main() {
     Camera3D cam = (Camera3D){(Vector3){2,2,0},(Vector3){0,0,0},(Vector3){0,1,0},.fovy=60};
 
     point_mesh = GenMeshCube(1,1,1);
-    Shader point_shader = LoadShader("cvis/point.vs","cvis/point.fs");
+    point_shader = LoadShader("cvis/point.vs","cvis/point.fs");
     point_material = LoadMaterialDefault();
     point_material.shader=point_shader;
 
-    Shader triangle_shader = LoadShader("cvis/tri.vs","cvis/tri.fs");
     triangle_material = LoadMaterialDefault();
+    triangle_shader = LoadShader("cvis/tri.vs","cvis/tri.fs");
     triangle_material.shader = triangle_shader;
 
 
@@ -222,24 +245,8 @@ int main() {
 
         DrawGrid(10,1);
 
-        BeginShaderMode(triangle_shader);
-        for (int i=0;i<input.scene.tri_count;i++) {
-            s_Triangle t = input.triangles[i];
-            // printf("triangle: %f %f %f\n",t.p0.x,t.p0.y,t.p0.z);
-            DrawTriangle3D(
-                conv_vec3(t.p1),
-                conv_vec3(t.p0),
-                conv_vec3(t.p2),
-                color_hash(i, 0.5, 0.3)
-            );
-            DrawTriangle3D(
-                conv_vec3(t.p0),
-                conv_vec3(t.p1),
-                conv_vec3(t.p2),
-                color_hash(i, 0.9, 0.5)
-            );
-        }
-        EndShaderMode();
+        if (0)
+        draw_scene();
 
         // if (0)
         for (int i=0;i<result_count;i++) {
