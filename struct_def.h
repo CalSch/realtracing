@@ -1,7 +1,7 @@
 #include "glsl_include.h"
 
 #define MAX_BOUNCES 2
-#define MAX_TRIANGLES 1400
+#define MAX_TRIANGLES 80000
 #define MAX_BVH_NODES MAX_TRIANGLES
 
 
