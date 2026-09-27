@@ -83,9 +83,13 @@ def make_input_buf():
         INPUT_BUF_INIT = np.frombuffer(contents, structs.dtype_Input)
 
     # pprint(struct_to_dict(INPUT_BUF_INIT))
-    
-    input_buf = ctx.buffer(INPUT_BUF_INIT.tobytes())
-    input_buf.bind_to_storage_buffer(1)
+
+    scene_buf = ctx.buffer(INPUT_BUF_INIT['scene'].tobytes())
+    scene_buf.bind_to_storage_buffer(1)
+    tri_buf = ctx.buffer(INPUT_BUF_INIT['triangles'].tobytes())
+    tri_buf.bind_to_storage_buffer(2)
+    bvh_buf = ctx.buffer(INPUT_BUF_INIT['bvh_nodes'].tobytes())
+    bvh_buf.bind_to_storage_buffer(3)
 
 
 
