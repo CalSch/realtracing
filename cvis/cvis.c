@@ -8,7 +8,7 @@
 #define LOGfmt(val,fmt) printf(#val " = " fmt "\n", val)
 
 
-Vector3 conv_vec3(s_vec3 v) {return (Vector3){-v.x,v.y,v.z};} // do -x bc raylib is right-handed (gross)
+Vector3 conv_vec3(s_vec3 v) {return (Vector3){v.x,v.y,v.z};} // do -x bc raylib is right-handed (gross)
 
 Color color_hash(int i, float sat, float value) {
     SetRandomSeed((i+412)*19);
@@ -227,14 +227,14 @@ int main() {
             s_Triangle t = input.triangles[i];
             // printf("triangle: %f %f %f\n",t.p0.x,t.p0.y,t.p0.z);
             DrawTriangle3D(
-                conv_vec3(t.p0),
                 conv_vec3(t.p1),
+                conv_vec3(t.p0),
                 conv_vec3(t.p2),
                 color_hash(i, 0.5, 0.3)
             );
             DrawTriangle3D(
-                conv_vec3(t.p1),
                 conv_vec3(t.p0),
+                conv_vec3(t.p1),
                 conv_vec3(t.p2),
                 color_hash(i, 0.9, 0.5)
             );
@@ -270,7 +270,7 @@ int main() {
 
         }
         
-        // draw_bounce_points();
+        draw_bounce_points();
 
         DrawLine3D((Vector3){0,0,0},conv_vec3((s_vec3){1,0,0}),RED);
         DrawLine3D((Vector3){0,0,0},conv_vec3((s_vec3){0,1,0}),GREEN);
