@@ -31,7 +31,6 @@ struct BVHNode {
 
 struct Scene {
     uint tri_count;
-    BVHNode bvh_nodes[MAX_BVH_NODES];
 };
 
 struct Hit {
@@ -53,4 +52,5 @@ struct Result {
 struct Input {
     Scene scene;
     Triangle triangles[MAX_TRIANGLES];
+    BVHNode bvh_nodes[MAX_BVH_NODES];
 };

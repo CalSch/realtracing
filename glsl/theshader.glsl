@@ -5,12 +5,17 @@ const float infinity = 1.0 / 0.0;
 #include "structs.glsl"
 #include "random.glsl"
 
-layout(std430, binding = 1) buffer InputBuffer {
-    Scene scene;
-    Triangle triangles[];
-};
 layout(std430, binding = 0) buffer ResultBuffer {
     Result results[];
+};
+layout(std430, binding = 1) buffer InputBuffer {
+    Scene scene;
+};
+layout(std430, binding = 2) buffer TriangleBuffer {
+    Triangle triangles[];
+};
+layout(std430, binding = 3) buffer BVHBuffer {
+    BVHNode bvh_nodes[];
 };
 
 #include "math.glsl"
@@ -47,6 +52,8 @@ void main() {
 
     Hit h;
     h.did_hit = true;
+
+    vec3 ray_color = vec3(1,1,1);
 
     for (int i=0; i<MAX_BOUNCES; i++) {
         h = cast_ray(ray);

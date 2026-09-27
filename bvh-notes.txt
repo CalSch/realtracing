@@ -1,0 +1,36 @@
+
+Hit {
+	bool did_hit;
+	uint tri_idx;
+	vec3 hit_point;
+	float dist;
+}
+
+func check_bb(bb): Hit {
+	if (! bb.is_leaf) {
+		Hit hA = check_bb(bb.childA);
+		Hit hB = check_bb(bb.childB);
+
+		if (!hA && !hB) {
+			return Hit(false, ...);
+		}
+		if (hA && hB) {
+			if (hA.dist < hB.dist)
+				return hA;
+			else
+				return hB;
+		}
+		if (hA)
+			return hA;
+		else
+			return hB;
+	} else {
+		Hit closest;
+		for (tri in bb.triangles) {
+			Hit h = check(tri)
+			if (h.dist < closest.dist)
+				closest = h;
+		}
+		return closest;
+	}
+}
