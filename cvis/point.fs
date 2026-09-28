@@ -10,8 +10,7 @@ in vec4 screen_pos;
 in vec4 center_screen_pos;
 
 // Input uniform values
-uniform sampler2D texture0;
-uniform sampler2D texture1;
+// uniform vec4 point_colors[];
 
 // Output fragment color
 out vec4 finalColor;
@@ -25,6 +24,8 @@ void main()
     // finalColor.rgb = fragColor.rgb * dot(fragNormal,normalize(vec3(1,1,1)));
     // finalColor.a = 1.0;
     finalColor = fragColor;
+    // finalColor = vec4(1);
+    // finalColor = point_colors[gl_InstanceID];
     // finalColor.a /= 1000.0*distance(screen_pos.xy, center_screen_pos.xy);
     // finalColor.rg *= screen_pos.xy;
 }

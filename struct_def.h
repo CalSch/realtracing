@@ -1,14 +1,16 @@
 #include "glsl_include.h"
 
-#define MAX_BOUNCES 2
-#define MAX_TRIANGLES 80000
+#define MAX_BOUNCES 6
+#define MAX_TRIANGLES 10000
 #define MAX_BVH_NODES MAX_TRIANGLES
+#define MAX_MATERIALS 8
 
 
 struct Triangle {
     vec3 p0;
     vec3 p1;
     vec3 p2;
+    int material_idx;
 };
 
 struct Ray {
@@ -29,8 +31,13 @@ struct BVHNode {
     uint tri_count;
 };
 
+struct Material {
+    vec3 c_diffuse;
+};
+
 struct Scene {
     uint tri_count;
+    Material materials[MAX_MATERIALS];
 };
 
 struct Hit {
@@ -40,13 +47,13 @@ struct Hit {
     vec3 pos;
     vec3 normal;
     uint tri_idx;
+
+    vec3 ray_color;
 };
 
 struct Result {
     int id;
     Hit bounces[MAX_BOUNCES];
-    Ray last_ray;
-    Ray last_ray2;
 };
 
 struct Input {

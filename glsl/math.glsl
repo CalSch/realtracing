@@ -31,7 +31,10 @@ float ray_triangle(Ray r, Triangle t) {
 }
 
 Triangle flip_tri(Triangle t) {
-    return Triangle(t.p0, t.p2, t.p1);
+    vec3 tmp = t.p0;
+    t.p0 = t.p1;
+    t.p1 = tmp;
+    return t;
 }
 
 Hit cast_ray(Ray r) {

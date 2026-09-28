@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <raylib.h>
 #include <raymath.h>
+#include <rlgl.h>
 
 #define LOGd(val) printf(#val " = %d\n", val)
 #define LOGfmt(val,fmt) printf(#val " = " fmt "\n", val)
@@ -23,10 +24,11 @@ s_Input input;
 Mesh point_mesh;
 Shader point_shader;
 Material point_material;
-float point_size = 0.005;
+float point_size = 0.003;
 
 int hit_point_count = 0;
 Matrix* hit_point_transforms = NULL;
+Vector4* hit_point_colors = NULL;
 
 Shader triangle_shader;
 Material triangle_material;
@@ -91,9 +93,11 @@ void calc_hit_point_transforms(int res_count, s_Result* results) {
     hit_point_count = res_count*MAX_BOUNCES;
 
     hit_point_transforms = calloc(hit_point_count,sizeof(Matrix));
+    hit_point_colors = calloc(hit_point_count,sizeof(Vector4));
 
     LOGd(hit_point_count);
-    printf("takes up %d MiB\n", hit_point_count*sizeof(Matrix)/1024/1024);
+    printf("transforms take up %d MiB\n", hit_point_count*sizeof(Matrix)/1024/1024);
+    printf("color      take up %d MiB\n", hit_point_count*sizeof(Vector4)/1024/1024);
 
     // Matrix default_matrix = MatrixScale(point_size,point_size,point_size);
 
@@ -106,11 +110,18 @@ void calc_hit_point_transforms(int res_count, s_Result* results) {
             int idx = i*MAX_BOUNCES + j;
 
             if (!h.did_hit) {
-                // hit_point_transforms[idx] = MatrixScale(0,0,0);
                 break;
             } else {
                 Vector3 p = conv_vec3(h.pos);
-                hit_point_transforms[idx] = MatrixMultiply(MatrixScale(point_size,point_size,point_size), MatrixTranslate(p.x,p.y,p.z));
+                s_vec3 c = h.ray_color;
+                // hit_point_transforms[idx] = MatrixMultiply(MatrixScale(point_size,point_size,point_size), MatrixTranslate(p.x,p.y,p.z));
+                hit_point_transforms[idx].m0 = p.x,
+                hit_point_transforms[idx].m1 = p.y,
+                hit_point_transforms[idx].m2 = p.z,
+                // hit_point_transforms[idx].m3 = p.z,
+                hit_point_transforms[idx].m4 = c.x;
+                hit_point_transforms[idx].m5 = c.y;
+                hit_point_transforms[idx].m6 = c.z;
             }
 
         }
@@ -122,7 +133,7 @@ void calc_hit_point_transforms(int res_count, s_Result* results) {
             unused_count++;
     }
     LOGd(unused_count);
-    printf("%d unused / %d total = %2.2f%% unused\n", unused_count, hit_point_count, 100.0*(float)unused_count/(float)hit_point_count);
+    printf("%d unused / %d total = %2.4f%% unused\n", unused_count, hit_point_count, 100.0*(float)unused_count/(float)hit_point_count);
 
     if (0) {
         Matrix M=hit_point_transforms[0];
@@ -142,22 +153,16 @@ void draw_scene() {
         s_Triangle t = input.triangles[i];
         // printf("triangle: %f %f %f\n",t.p0.x,t.p0.y,t.p0.z);
         DrawTriangle3D(
-            conv_vec3(t.p1),
-            conv_vec3(t.p0),
-            conv_vec3(t.p2),
-            color_hash(i, 0.5, 0.3)
-        );
-        DrawTriangle3D(
             conv_vec3(t.p0),
             conv_vec3(t.p1),
             conv_vec3(t.p2),
-            color_hash(i, 0.9, 0.5)
+            color_hash(i, 0.9, 0.6)
         );
     }
     EndShaderMode();
 }
 
-void draw_bounce_points() {
+void draw_hit_points() {
     DrawMeshInstanced(point_mesh, point_material, hit_point_transforms, hit_point_count);
 }
 
@@ -172,6 +177,7 @@ int main() {
 
 
     SetTraceLogLevel(LOG_WARNING);
+    SetConfigFlags(FLAG_MSAA_4X_HINT);
     InitWindow(1270,720,"gump!");
 
     double load_start_time = GetTime();
@@ -190,7 +196,8 @@ int main() {
 
     Camera3D cam = (Camera3D){(Vector3){2,2,0},(Vector3){0,0,0},(Vector3){0,1,0},.fovy=60};
 
-    point_mesh = GenMeshCube(1,1,1);
+    // point_mesh = GenMeshCube(1,1,1);
+    point_mesh = GenMeshPoly(4,1);
     point_shader = LoadShader("cvis/point.vs","cvis/point.fs");
     point_material = LoadMaterialDefault();
     point_material.shader=point_shader;
@@ -199,7 +206,7 @@ int main() {
     triangle_shader = LoadShader("cvis/tri.vs","cvis/tri.fs");
     triangle_material.shader = triangle_shader;
 
-
+    rlDisableBackfaceCulling();
 
 
     double load_end_time = GetTime();
@@ -245,8 +252,7 @@ int main() {
 
         DrawGrid(10,1);
 
-        if (0)
-        draw_scene();
+        // draw_scene();
 
         // if (0)
         for (int i=0;i<result_count;i++) {
@@ -277,7 +283,7 @@ int main() {
 
         }
         
-        draw_bounce_points();
+        draw_hit_points();
 
         DrawLine3D((Vector3){0,0,0},conv_vec3((s_vec3){1,0,0}),RED);
         DrawLine3D((Vector3){0,0,0},conv_vec3((s_vec3){0,1,0}),GREEN);

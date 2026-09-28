@@ -58,24 +58,31 @@ void main() {
     for (int i=0; i<MAX_BOUNCES; i++) {
         h = cast_ray(ray);
 
-        if (random_u() < 0.0)
+        if (random_u() < 0.05)
             h.did_hit = false;
 
-        res.bounces[i] = h;
-        res.last_ray = ray;
+        // lighting and such
+        Triangle tri = triangles[h.tri_idx];
+        Material mat = scene.materials[tri.material_idx];
 
         vec3 specular_dir = reflect(ray.dir,h.normal);
         vec3 diffuse_dir = normalize(random_dir() + h.normal);
-        bool is_diffuse = random_u()<0.5;
+        bool is_diffuse = random_u()<(1.0-0.0001);
         vec3 new_dir = mix(specular_dir, diffuse_dir, is_diffuse?1:0);
 
+        ray_color *= mat.c_diffuse;
+        h.ray_color = ray_color;
+
+
+        res.bounces[i] = h;
+
+        // setup next ray
         ray = Ray(
             h.pos,
             new_dir
         );
 
         ray.origin += ray.dir * 0.001;
-        res.last_ray2 = ray;
 
 
         if (!h.did_hit)

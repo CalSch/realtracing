@@ -2,6 +2,7 @@ import sys
 import re
 import structs
 import numpy as np
+import random
 
 INP_BUF = np.zeros(1, dtype=structs.dtype_Input)[0]
 
@@ -11,6 +12,18 @@ vertices = []
 normals = []
 tris = []
 
+INP_BUF['scene']['materials'][1]['c_diffuse']['x'] = 0.9
+INP_BUF['scene']['materials'][1]['c_diffuse']['y'] = 0.9
+INP_BUF['scene']['materials'][1]['c_diffuse']['z'] = 0.1
+
+INP_BUF['scene']['materials'][2]['c_diffuse']['x'] = 0.1
+INP_BUF['scene']['materials'][2]['c_diffuse']['y'] = 0.9
+INP_BUF['scene']['materials'][2]['c_diffuse']['z'] = 0.9
+
+INP_BUF['scene']['materials'][3]['c_diffuse']['x'] = 0.9
+INP_BUF['scene']['materials'][3]['c_diffuse']['y'] = 0.1
+INP_BUF['scene']['materials'][3]['c_diffuse']['z'] = 0.9
+
 def add_tri(t):
 	# print(f"{len(INP_BUF['scene']['tris'])=}")
 	idx = INP_BUF['scene']['tri_count']
@@ -18,6 +31,7 @@ def add_tri(t):
 		INP_BUF['triangles'][idx][p[1]]['x'] = t[p[0]][0]
 		INP_BUF['triangles'][idx][p[1]]['y'] = t[p[0]][1]
 		INP_BUF['triangles'][idx][p[1]]['z'] = t[p[0]][2]
+	INP_BUF['triangles'][idx]['material_idx'] = 1 if random.random()<0.06 else 2
 	INP_BUF['scene']['tri_count'] += 1
 
 
