@@ -1,0 +1,6 @@
+[submodule "cvis/cimgui"]
+	path = cvis/cimgui
+	url = https://github.com/cimgui/cimgui
+[submodule "cvis/rlImGui"]
+	path = cvis/rlImGui
+	url = https://github.com/raylib-extras/rlImGui

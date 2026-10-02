@@ -1,10 +1,10 @@
-all: glsl/structs.glsl structs.py structs.h
+all: structs.h cvis/cvis scene.obj
 
 glsl/structs.glsl structs.py structs.h: struct_def.h glsl_include.h structgen.py
 	gcc -E struct_def.h | python3 structgen.py
 
-cvis/cvis: cvis/cvis.c structs.h
-	gcc -o $@ $< -lraylib -O3 -ffast-math
+cvis/cvis:
+	$(MAKE) -C cvis cvis
 
 scene.obj scene.mtl: scene.blend
 	OUT_PATH=scene.obj blender scene.blend --background --enable-autoexec --python-exit-code 1 --offline-mode --python blender_export_script.py
@@ -17,3 +17,6 @@ results.bin: inputs.bin structs.py main.py glsl/*.glsl
 
 clean:
 	rm -vf .output.glsl cvis/cvis {inputs,results}.bin scene.{obj,mtl} structs.{h,py} glsl/structs.glsl
+	$(MAKE) -C cvis clean
+
+.PHONY: all cvis/cvis clean
